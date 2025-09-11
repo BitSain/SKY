@@ -163,7 +163,7 @@ bool ValidatePosition(const CVector& position) {
     
     if (position.fX < MIN_COORD || position.fX > MAX_COORD ||
         position.fY < MIN_COORD || position.fY > MAX_COORD ||
-        position.fZ < -1000.0f || position.fZ > 3000.0f) { // Z has different bounds
+        position.fZ < -1000.0f || position.fZ > 10000.0f) { // Z has different bounds
         return false;
     }
     
