@@ -175,11 +175,10 @@ namespace Versions
         }
 
         // Animations are only sent when they are changed
-        if (animation )
+        if (animation)
         {
             bs->Write(true);
-            bs->Write((DWORD)d->wAnimIndex);
-            bs->Write((DWORD)d->wAnimFlags);
+            bs->Write(animation);
         }
         else
         {
