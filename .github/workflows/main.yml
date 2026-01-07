@@ -1,0 +1,79 @@
+name: Build Plugin
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch: # Permite que você execute o build manualmente pelo site
+
+jobs:
+  build-linux:
+    name: Build Linux (Ubuntu 22.04 x64)
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Configurar Earthly
+        uses: earthly/actions/setup-earthly@v1
+        with:
+          version: latest
+
+      - name: Compilar com Earthly
+        run: earthly --allow-privileged +build-linux
+
+      - name: Upload do Artefato Linux
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-build
+          path: |
+            build/SKY.so
+            SKY.inc
+          retention-days: 7
+
+  build-windows:
+    name: Build Windows (Win32)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Configurar CMake
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -A Win32
+
+      - name: Compilar Windows
+        run: cmake --build build --config Release
+
+      - name: Upload do Artefato Windows
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: |
+            build/Release/SKY.dll
+            SKY.inc
+          retention-days: 7
+
+  build-status:
+    name: Status Final
+    needs: [build-linux, build-windows]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Verificar resultados
+        run: |
+          if [[ "${{ needs.build-linux.result }}" == "success" && "${{ needs.build-windows.result }}" == "success" ]]; then
+            echo "✅ Compilação concluída com sucesso para ambas as plataformas!"
+          else
+            echo "❌ Falha detectada em um dos builds."
+            exit 1
+          fi
