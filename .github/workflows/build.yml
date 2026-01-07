@@ -8,7 +8,8 @@ on:
 
 jobs:
   build-linux:
-    runs-on: ubuntu-latest
+    # Fixar a versão garante compatibilidade com o ambiente de execução do Ubuntu 22.04
+    runs-on: ubuntu-22.04 
     steps:
       - uses: actions/checkout@v4
         with:
@@ -21,12 +22,13 @@ jobs:
           version: latest
 
       - name: Build Linux with Earthly
-        run: earthly +build-linux
+        # Certifique-se que o seu Earthfile está configurado para exportar os arquivos para ./build
+        run: earthly --allow-privileged +build-linux
 
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
         with:
-          name: linux-build
+          name: linux-build-ubuntu22
           path: |
             build/SKY.so
             SKY.inc
@@ -34,7 +36,6 @@ jobs:
 
   build-windows:
     runs-on: windows-latest
-
     steps:
       - uses: actions/checkout@v4
         with:
@@ -45,6 +46,7 @@ jobs:
         uses: microsoft/setup-msbuild@v2
 
       - name: Configure CMake
+        # Mantendo Win32 conforme seu script original
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release -A Win32
 
       - name: Build Windows
@@ -55,7 +57,7 @@ jobs:
         with:
           name: windows-build
           path: |
-            build/SKY.dll
+            build/Release/SKY.dll
             SKY.inc
           retention-days: 7
 
@@ -63,7 +65,6 @@ jobs:
     needs: [build-linux, build-windows]
     runs-on: ubuntu-latest
     if: always()
-
     steps:
       - name: Check build results
         run: |
@@ -71,7 +72,5 @@ jobs:
             echo "✅ All builds successful"
           else
             echo "❌ One or more builds failed"
-            echo "Linux build: ${{ needs.build-linux.result }}"
-            echo "Windows build: ${{ needs.build-windows.result }}"
             exit 1
           fi
